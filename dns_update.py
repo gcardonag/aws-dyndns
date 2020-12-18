@@ -1,12 +1,12 @@
+import os
 import boto3
 import requests
 import argparse
 
 class AWSDynDns(object):
-    def __init__(self, domain, record, hosted_zone_id, profile_name, ttl):
+    def __init__(self, domain, record, hosted_zone_id, ttl):
         self.ip_service = "http://httpbin.org/ip"
-        session = boto3.Session(profile_name=profile_name)
-        self.client = session.client('route53')
+        self.client = boto3.client('route53')
         self.domain = domain
         self.record = record
         self.ttl = ttl
@@ -46,12 +46,17 @@ class AWSDynDns(object):
             StartRecordName=self.fqdn,
             StartRecordType='A',
         )
+        
+        print(response)
 
         found_flag = False
 
         if len(response['ResourceRecordSets']) == 0:
             return found_flag
             #raise Exception("Could not find any records matching domain: {0}".format(self.domain))
+
+        print(self.fqdn)
+        print(response['ResourceRecordSets'][0]['Name'])
 
         if self.fqdn in response['ResourceRecordSets'][0]['Name']:
             for ip in response['ResourceRecordSets'][0]['ResourceRecords']:
@@ -98,38 +103,34 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manage a dynamic home IP address with an AWS hosted route53 domain")
 
     parser.add_argument(
-        "--profile","-p",
-        default='ddns',
-        help="AWS credential profile",
+        "--domain", "-d",
+        default=os.getenv("DOMAIN"),
+        help="Domain to modify",
         required=False
     )
 
     parser.add_argument(
-        "--domain", "-d",
-        help="Domain to modify",
-        required=True
-    )
-
-    parser.add_argument(
         "--record", "-r",
+        default=os.getenv("RECORD_NAME"),
         help="Record to modify",
         required=False
     )
 
     parser.add_argument(
         "--zone", "-z",
+        default=os.getenv("ZONE_ID"),
         help="AWS hosted zone id",
         required=False
     )
 
     parser.add_argument(
         "--ttl",
-        default=300,
+        default=60,
         help="Record TTL",
         required=False
     )
 
     args = parser.parse_args()
 
-    run = AWSDynDns(args.domain, args.record, args.zone, args.profile, args.ttl)
+    run = AWSDynDns(args.domain, args.record, args.zone, args.ttl)
     run.update_record()
