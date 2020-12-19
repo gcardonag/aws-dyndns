@@ -46,17 +46,12 @@ class AWSDynDns(object):
             StartRecordName=self.fqdn,
             StartRecordType='A',
         )
-        
-        print(response)
 
         found_flag = False
 
         if len(response['ResourceRecordSets']) == 0:
             return found_flag
             #raise Exception("Could not find any records matching domain: {0}".format(self.domain))
-
-        print(self.fqdn)
-        print(response['ResourceRecordSets'][0]['Name'])
 
         if self.fqdn in response['ResourceRecordSets'][0]['Name']:
             for ip in response['ResourceRecordSets'][0]['ResourceRecords']:
